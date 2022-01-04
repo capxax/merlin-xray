@@ -1,0 +1,256 @@
+{
+    "log": {
+        "loglevel": "",
+        "error": "",
+        "access": ""
+    },
+    "inbounds": [
+	 {
+      "port": 53,
+      "tag": "dns-in",
+      "protocol": "dokodemo-door",
+      "settings": {
+        "address": "114.114.114.114",
+        "port": 53,
+        "network": "udp"
+      }
+	 },
+        {
+            "tag": "all-in",
+            "port": 12345,
+            "protocol": "dokodemo-door",
+            "settings": {
+                "network": "tcp,udp",
+                "followRedirect": true
+            },
+            "sniffing": {
+                "enabled": true,
+                "destOverride": [
+                    "http",
+                    "tls"
+                ]
+            },
+            "streamSettings": {
+                "sockopt": {
+                    "tproxy": "tproxy"
+                }
+            }
+        }
+    ],
+    "outbounds": [
+	{
+            "tag": "proxy",
+            "protocol": "vless",
+            "settings": {
+                "vnext": [
+                    {
+                       "address": "域名",//填写
+            "port": 443,
+            "users": [
+              {
+                "id": "UUID",//填写
+                "flow": "xtls-rprx-splice",
+                "encryption": "none"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "tcp",
+                "security": "xtls",
+				
+                "sockopt": {
+                    "mark": 255
+                }
+            }
+        },
+		
+	
+	
+        
+		
+        {
+            "tag": "direct",
+            "protocol": "freedom",
+            "settings": {
+                "domainStrategy": "UseIPv4"
+            },
+            "streamSettings": {
+                "sockopt": {
+                    "mark": 255
+                }
+            }
+        },
+        {
+            "tag": "block",
+            "protocol": "blackhole",
+            "settings": {
+                "response": {
+                    "type": "http"
+                }
+            }
+        },
+		{
+      "tag": "dns-out",
+      "protocol": "dns",
+      "streamSettings": {
+        "sockopt": {
+          "mark": 255
+        }
+      }  
+    }
+		
+		
+		
+        
+    ],
+    "dns": {
+        "hosts": {
+      "域名": "ip",//填写
+	  
+			
+            "dns.google": "8.8.8.8",
+            "dns.pub": "119.29.29.29",
+            "dns.alidns.com": "223.5.5.5",
+            "www.msftconnecttest.com": "23.202.34.242",
+            "geosite:category-ads-all": "127.0.0.1",
+			"courier.push.apple.com":  ["17.57.145.166","17.57.145.172","17.57.145.133","17.57.145.165","17.57.145.167","17.57.144.27"]
+
+        },
+        "servers": [
+            
+           {
+        "address": "https://1.1.1.1/dns-query",
+        "domains": ["geosite:geolocation-!cn", "geosite:google@cn"],
+        "expectIPs": ["geoip:!cn"]
+      },			{
+                "address": "https://223.5.5.5/dns-query",
+                "domains": [
+                    "geosite:cn",
+                    "geosite:icloud",
+                    "geosite:category-games@cn"
+                ],
+				"expectIPs": ["geoip:cn"],
+				"skipFallback": true
+            },
+            "8.8.8.8"
+        ],
+		"queryStrategy": "UseIPv4"
+    },
+    "routing": {
+        "domainStrategy": "IPIfNonMatch",
+        "rules": [
+		 {
+        "type": "field",
+        "inboundTag": [
+          "dns-in"
+        ],
+        "outboundTag": "dns-out"
+      },
+			 { 
+        "type": "field",
+        "inboundTag": [
+          "all-in"
+        ],
+        "port": 53,
+        "network": "udp",
+        "outboundTag": "dns-out" 
+      },    
+      { 
+        "type": "field",
+        "inboundTag": [
+          "all-in"
+        ],
+        "port": 123,
+        "network": "udp",
+        "outboundTag": "direct" 
+      },    
+			
+			
+			
+            {
+                "type": "field",
+                "outboundTag": "direct",
+                "protocol": [
+                    "bittorrent"
+                ]
+            },
+            
+            {
+                "type": "field",
+                "domain": [
+                    "geosite:category-ads-all"
+                ],
+                "outboundTag": "block"
+            },
+			{
+        "type": "field",
+        "outboundTag": "proxy",
+        "domain": [
+          "full:www.icloud.com",
+          "domain:icloud-content.com",
+          "geosite:google"
+        ]
+      },
+			{
+                "type": "field",
+                "ip": [
+        
+					"IP"//填写
+                ],
+                "outboundTag": "direct"
+            },
+			
+            {
+                "type": "field",
+                "ip": [
+                   "1.1.1.1/32",
+					"1.0.0.1/32",
+					"8.8.8.8/32",
+					"8.8.4.4/32",
+					"geoip:us",
+					"geoip:ca",
+					"geoip:telegram"
+                ],
+                "outboundTag": "proxy"
+            },
+            {
+                "type": "field",
+                "ip": [
+                    "223.5.5.5/32",
+                    "119.29.29.29/32",
+                    "180.76.76.76/32",
+                    "114.114.114.114/32",
+                    "geoip:cn",
+                    "geoip:private",
+"17.57.144.0/22",
+"17.0.0.0/8"
+
+                ],
+                "outboundTag": "direct"
+            },
+            {
+                "type": "field",
+                "domain": [
+                    "geosite:cn",
+                    "geosite:private",
+                    "geosite:apple-cn",
+                    "geosite:google-cn",
+                    "geosite:tld-cn",
+                    
+"courier.push.apple.com",
+"geosite:apple"
+                ],
+                "outboundTag": "direct"
+            },
+            {
+                "type": "field",
+                "outboundTag": "proxy",
+                "domain": [
+                    "geosite:geolocation-!cn"
+                ]
+            }
+        ]
+    }
+}

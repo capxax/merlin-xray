@@ -1,0 +1,10 @@
+#!/bin/sh
+#xray start
+sh /jffs/scripts/firewall-start
+mkdir /tmp/xraylog/
+sleep 45
+sh /jffs/scripts/firewall-start
+service stop_dnsmasq
+nohup /jffs/xray/xray --config=/jffs/xray/config.json > /dev/null 2>&1 &
+#check xray every 15 minute
+cru a check-xray "*/15 * * * * /jffs/scripts/xray-check.sh > /dev/null"
